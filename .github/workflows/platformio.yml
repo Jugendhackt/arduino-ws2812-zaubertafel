@@ -1,0 +1,40 @@
+name: PlatformIO
+
+on:
+  push:
+  pull_request:
+  # Build regularly in order to check with new dependency versions
+  schedule:
+    - cron: '42 2 * * 6' # weekly on Saturday 2:42 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: PlatformIO Build
+        uses: karniv00l/platformio-run-action@v1
+
+      - name: Package
+        run: |
+          cd .pio/build
+          7z a firmware.zip **/firmware.bin
+          mv firmware.zip ../../
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          path: |
+            *.zip
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+             *.zip
